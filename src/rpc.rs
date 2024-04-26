@@ -88,6 +88,7 @@ pub async fn start_service(config: RpcServiceConfig) {
     let timeout = Duration::from_millis(config.timeout_ms);
     let mut interval = tokio::time::interval(Duration::from_millis(config.period_ms));
     loop {
+        interval.tick().await;
         RPC_LOOP_COUNTER.inc();
         tracing::info!(target: TARGET_RPC, "Starting RPC loop");
         let loop_start = std::time::Instant::now();
@@ -163,7 +164,5 @@ pub async fn start_service(config: RpcServiceConfig) {
         futures::future::join_all(tasks).await;
         let loop_elapsed = loop_start.elapsed().as_millis();
         tracing::info!(target: TARGET_RPC, "Finished RPC loop {}ms", loop_elapsed);
-
-        interval.tick().await;
     }
 }

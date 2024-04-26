@@ -1,0 +1,114 @@
+{
+  "timeout_ms": 2000,
+  "period_ms": 10000,
+  "concurrency": 32,
+  "endpoints": [
+    {
+      "url": "https://rpc.mainnet.near.org"
+    },
+    {
+      "url": "https://archival-rpc.mainnet.near.org"
+    },
+    {
+      "url": "https://beta.rpc.mainnet.near.org"
+    },
+    {
+      "url": "https://free.rpc.fastnear.com"
+    }
+  ],
+  "payloads": [
+    {
+      "name": "status",
+      "data": null
+    },
+    {
+      "name": "gas_price",
+      "data": {
+        "jsonrpc": "2.0",
+        "method": "gas_price",
+        "params": [
+          null
+        ],
+        "id": "0"
+      }
+    },
+    {
+      "name": "validators",
+      "data": {
+        "jsonrpc": "2.0",
+        "method": "validators",
+        "params": {
+          "latest": null
+        },
+        "id": "0"
+      }
+    },
+    {
+      "name": "final_block",
+      "data": {
+        "jsonrpc": "2.0",
+        "method": "block",
+        "params": {
+          "finality": "final"
+        },
+        "id": "0"
+      }
+    },
+    {
+      "name": "query_fc_epoch_optimistic",
+      "data": {
+        "jsonrpc": "2.0",
+        "method": "query",
+        "params": {
+          "finality": "optimistic",
+          "request_type": "function_call",
+          "account_id": "epoch.berryclub.ek.near",
+          "method_name": "e",
+          "args_base64": "e30="
+        },
+        "id": "0"
+      }
+    },
+    {
+      "name": "query_fc_epoch_final",
+      "data": {
+        "jsonrpc": "2.0",
+        "method": "query",
+        "params": {
+          "finality": "final",
+          "request_type": "function_call",
+          "account_id": "epoch.berryclub.ek.near",
+          "method_name": "e",
+          "args_base64": "e30="
+        },
+        "id": "0"
+      }
+    },
+    {
+      "name": "query_account_final",
+      "data": {
+        "jsonrpc": "2.0",
+        "method": "query",
+        "params": {
+          "finality": "final",
+          "request_type": "view_account",
+          "account_id": "game.hot.tg"
+        },
+        "id": "0"
+      }
+    },
+    {
+      "name": "query_account_optimistic",
+      "data": {
+        "jsonrpc": "2.0",
+        "method": "query",
+        "params": {
+          "finality": "optimistic",
+          "request_type": "view_account",
+          "account_id": "game.hot.tg"
+        },
+        "id": "0"
+      }
+    }
+  ]
+}

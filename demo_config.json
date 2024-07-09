@@ -61,7 +61,7 @@
         "method": "query",
         "params": {
           "finality": "optimistic",
-          "request_type": "function_call",
+          "request_type": "call_function",
           "account_id": "epoch.berryclub.ek.near",
           "method_name": "e",
           "args_base64": "e30="
@@ -76,7 +76,7 @@
         "method": "query",
         "params": {
           "finality": "final",
-          "request_type": "function_call",
+          "request_type": "call_function",
           "account_id": "epoch.berryclub.ek.near",
           "method_name": "e",
           "args_base64": "e30="

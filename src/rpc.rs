@@ -98,6 +98,8 @@ pub async fn start_service(config: RpcServiceConfig) {
             let mut endpoint_tasks = vec![];
             for payload in config.payloads.clone() {
                 let url = endpoint.url.clone();
+                // Strip query parameters from url for metrics labels (if they exist)
+                let url = url.split('?').next().unwrap().to_string();
                 let bearer_token = endpoint.bearer_token.clone();
                 let client = client.clone();
                 let permits = permits.clone();

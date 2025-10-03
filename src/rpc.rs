@@ -11,6 +11,7 @@ const TARGET_RPC: &str = "rpc";
 #[derive(Debug, Clone, Deserialize)]
 pub struct Endpoint {
     pub url: String,
+    pub public_url: Option<String>,
     pub bearer_token: Option<String>,
 }
 
@@ -98,8 +99,9 @@ pub async fn start_service(config: RpcServiceConfig) {
             let mut endpoint_tasks = vec![];
             for payload in config.payloads.clone() {
                 let url = endpoint.url.clone();
+                let public_url = endpoint.public_url.clone().unwrap_or_else(|| url.clone());
                 // Strip query parameters from url for metrics labels (if they exist)
-                let url = url.split('?').next().unwrap().to_string();
+                let public_url = public_url.split('?').next().unwrap().to_string();
                 let bearer_token = endpoint.bearer_token.clone();
                 let client = client.clone();
                 let permits = permits.clone();
@@ -107,7 +109,9 @@ pub async fn start_service(config: RpcServiceConfig) {
                     let _permit = permits.acquire().await.unwrap();
                     let name = &payload.name;
                     tracing::debug!(target: TARGET_RPC, "Requesting {} from {}", name, url);
-                    RPC_REQUEST_COUNTER.with_label_values(&[&url, &name]).inc();
+                    RPC_REQUEST_COUNTER
+                        .with_label_values(&[&public_url, &name])
+                        .inc();
                     let start = std::time::Instant::now();
                     let response = if let Some(data) = payload.data {
                         rpc_json_request(data, &client, &url, &bearer_token, timeout).await
@@ -118,16 +122,18 @@ pub async fn start_service(config: RpcServiceConfig) {
                     let is_ok = match response {
                         Ok(response) => {
                             if response.get("result").is_some() {
-                                RPC_SUCCESS_COUNTER.with_label_values(&[&url, &name]).inc();
+                                RPC_SUCCESS_COUNTER
+                                    .with_label_values(&[&public_url, &name])
+                                    .inc();
                                 true
                             } else if response.get("error").is_some() {
                                 RPC_ERROR_JSON_COUNTER
-                                    .with_label_values(&[&url, &name])
+                                    .with_label_values(&[&public_url, &name])
                                     .inc();
                                 false
                             } else {
                                 RPC_ERROR_INVALID_JSONRPC_COUNTER
-                                    .with_label_values(&[&url, &name])
+                                    .with_label_values(&[&public_url, &name])
                                     .inc();
                                 false
                             }
@@ -135,11 +141,11 @@ pub async fn start_service(config: RpcServiceConfig) {
                         Err(RpcError::ReqwestError(err)) => {
                             if err.is_timeout() {
                                 RPC_ERROR_TIMEOUT_COUNTER
-                                    .with_label_values(&[&url, &name])
+                                    .with_label_values(&[&public_url, &name])
                                     .inc();
                             } else {
                                 RPC_ERROR_REQWEST_COUNTER
-                                    .with_label_values(&[&url, &name])
+                                    .with_label_values(&[&public_url, &name])
                                     .inc();
                             }
                             false
@@ -147,11 +153,11 @@ pub async fn start_service(config: RpcServiceConfig) {
                     };
                     if is_ok {
                         RPC_SUCCESS_LATENCY_HISTOGRAM
-                            .with_label_values(&[&url, &name])
+                            .with_label_values(&[&public_url, &name])
                             .observe(elapsed);
                     } else {
                         RPC_ERROR_LATENCY_HISTOGRAM
-                            .with_label_values(&[&url, &name])
+                            .with_label_values(&[&public_url, &name])
                             .observe(elapsed);
                     }
                 });

@@ -117,11 +117,16 @@ pub async fn start_service(config: RpcServiceConfig) {
                     let elapsed = start.elapsed().as_nanos() as f64 * 1e-9;
                     let is_ok = match response {
                         Ok(response) => {
-                            if serde_json::from_value::<Value>(response).is_ok() {
+                            if response.get("result").is_some() {
                                 RPC_SUCCESS_COUNTER.with_label_values(&[&url, &name]).inc();
                                 true
-                            } else {
+                            } else if response.get("error").is_some() {
                                 RPC_ERROR_JSON_COUNTER
+                                    .with_label_values(&[&url, &name])
+                                    .inc();
+                                false
+                            } else {
+                                RPC_ERROR_INVALID_JSONRPC_COUNTER
                                     .with_label_values(&[&url, &name])
                                     .inc();
                                 false

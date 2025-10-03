@@ -29,6 +29,12 @@ lazy_static! {
         &["url", "name"]
     )
     .unwrap();
+    pub static ref RPC_ERROR_INVALID_JSONRPC_COUNTER: IntCounterVec = register_int_counter_vec!(
+        "rpc_error_invalid_json_count",
+        "Number of invalid JSONRPC responses in RPC requests",
+        &["url", "name"]
+    )
+    .unwrap();
     pub static ref RPC_ERROR_TIMEOUT_COUNTER: IntCounterVec = register_int_counter_vec!(
         "rpc_error_timeout_count",
         "Number of timeouts in RPC requests",

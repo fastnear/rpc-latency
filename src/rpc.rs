@@ -26,6 +26,7 @@ pub struct Payload {
 pub struct RpcServiceConfig {
     pub timeout_ms: u64,
     pub period_ms: u64,
+    pub sleep_ms: Option<u64>,
     pub concurrency: usize,
     pub endpoints: Vec<Endpoint>,
     pub payloads: Vec<Payload>,
@@ -87,6 +88,7 @@ pub async fn start_service(config: RpcServiceConfig) {
     let client = Client::new();
     // start interval loop with tokio
     let timeout = Duration::from_millis(config.timeout_ms);
+    let sleep_duration = config.sleep_ms.map(|ms| Duration::from_millis(ms));
     let mut interval = tokio::time::interval(Duration::from_millis(config.period_ms));
     loop {
         interval.tick().await;
@@ -165,16 +167,24 @@ pub async fn start_service(config: RpcServiceConfig) {
             tasks.push(endpoint_tasks);
         }
         // Reordering tasks to avoid hitting the same endpoint multiple times in a row
-        let mut ordered_tasks = vec![];
         let mut iterators: Vec<_> = tasks.into_iter().map(|tasks| tasks.into_iter()).collect();
         for _ in &config.payloads {
+            let mut ordered_tasks = vec![];
             for iter in iterators.iter_mut() {
                 ordered_tasks.push(iter.next().unwrap());
             }
+            let sub_loop_start = std::time::Instant::now();
+            // Spawning tasks with concurrency
+            let tasks = ordered_tasks.into_iter().map(|task| tokio::spawn(task));
+            futures::future::join_all(tasks).await;
+            let sub_loop_elapsed = sub_loop_start.elapsed().as_millis();
+            tracing::info!(target: TARGET_RPC, "Finished sub-loop {}ms", sub_loop_elapsed);
+            // Sleeping between sub-loops to avoid hitting the same endpoint too quickly
+            if let Some(sleep_duration) = sleep_duration {
+                tracing::info!(target: TARGET_RPC, "Sleeping for {}ms", sleep_duration.as_millis());
+                tokio::time::sleep(sleep_duration).await;
+            }
         }
-        // Spawning tasks with concurrency
-        let tasks = ordered_tasks.into_iter().map(|task| tokio::spawn(task));
-        futures::future::join_all(tasks).await;
         let loop_elapsed = loop_start.elapsed().as_millis();
         tracing::info!(target: TARGET_RPC, "Finished RPC loop {}ms", loop_elapsed);
     }
